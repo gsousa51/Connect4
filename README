@@ -1,0 +1,12 @@
+Author: Gary Sousa
+
+This is a model of the classic game Connect Four.
+The user plays using their mouse, their opponent is the computer.
+I have programmed the computer to make intelligent moves, only relying on random movesif
+there are no more useful moves available.
+As does a human, the computer searches for a winning move first, then searches for any
+possible winning human moves in the future, so it may block them.
+From there, it looks for the next best moves, ensuring his moves will not result in a 
+win by the human unless there is essentially a checkmate, and the human winning is imminent
+
+To run this GUI, run view>GameFrame.java as a Java Application.
