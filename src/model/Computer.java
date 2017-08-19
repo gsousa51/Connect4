@@ -284,7 +284,7 @@ public class Computer {
 		int indx;
 		Point blankSpace = new Point();
 
-		for (int c = 3; c < WIDTH; c++) {
+		for (int c = size-1; c < WIDTH; c++) {
 			for (int r = 0; r <= HEIGHT - size; r++) {
 				adj = 0;
 				indx = 0;
@@ -342,8 +342,8 @@ public class Computer {
 		int adj;
 		int indx;
 		Point blankSpace = new Point();
-		for (int c = WIDTH - 1; c >= size; c--) {
-			for (int r = HEIGHT - 1; r >= size; r--) {
+		for (int c = WIDTH - 1; c >= size-1; c--) {
+			for (int r = HEIGHT - 1; r >= size-1; r--) {
 				adj = 0;
 				indx = 0;
 				starting = new Point(c, r);
