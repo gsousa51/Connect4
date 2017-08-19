@@ -217,47 +217,81 @@ public class Board {
 		return true;
 	}
 
-	/**Parameters: Two empty points found by the computer when searching for a 
-	*move that would create a string of size 3.
-	**The computer sends in the intended move, and where the move would be blocked.
-	*If the user blocks them and there's another place for the computer to go to win
-	*This would be considered a killshot.
-	**/
+	/**
+	 * Parameters: Two empty points found by the computer when searching for a
+	 * move that would create a string of size 3. The computer sends in the
+	 * intended move, and where the move would be blocked. If the user blocks
+	 * them and there's another place for the computer to go to win This would
+	 * be considered a killshot.
+	 **/
 	public boolean killShot(Space type, Point move, Point block) {
 		int moveR = move.y;
 		int moveC = move.x;
 		int blockR = block.y;
 		int blockC = block.x;
-		if(type != Space.RED ||
-				!this.validMove(moveR, moveC) || !this.validMove(blockR, blockC)){
+		if (type != Space.RED || !this.validMove(moveR, moveC) || !this.validMove(blockR, blockC)) {
 			return false;
 		}
+		// Comp takes its desired move
 		this.setSpace(moveR, moveC, Space.RED);
+		// If user didn't go here, we assume computer would to check for win
+		// If computer couldn't win in spot anyways, user wouldn't have blocked
+
 		this.setSpace(blockR, blockC, Space.RED);
-		if(!this.checkForWin(Space.RED)){
-			this.setSpace(moveR, moveC, Space.EMPTY);
-			this.setSpace(blockR, blockC, Space.EMPTY);
+		if (!this.checkForWin(Space.RED)) {
+			resetSpaces(move, block);
 			return false;
-		}
-		else{
+		} else {
+			// If this would set up a win by the user, return false.
 			this.setSpace(blockR, blockC, Space.BLACK);
+			if (this.checkForWin(Space.BLACK)) {
+				resetSpaces(move, block);
+				return false;
+			}
+
 		}
 		for (int r = 0; r < board.length; r++) {
 			for (int c = 0; c < board[0].length; c++) {
 				if (this.validMove(r, c)) {
 					this.setSpace(r, c, Space.RED);
 					if (this.checkForWin(Space.RED)) {
+						resetSpaces(move, block);
 						this.setSpace(r, c, Space.EMPTY);
-						this.setSpace(moveR, moveC, Space.EMPTY);
-						this.setSpace(blockR, blockC, Space.EMPTY);
 						return true;
 					} else
 						this.setSpace(r, c, Space.EMPTY);
 				}
 			}
 		}
-		this.setSpace(moveR, moveC, Space.EMPTY);
-		this.setSpace(blockR, blockC, Space.EMPTY);
+		resetSpaces(move, block);
+		return false;
+	}
+
+	private void resetSpaces(Point move, Point block) {
+		this.setSpace(move.y, move.x, Space.EMPTY);
+		this.setSpace(block.y, block.x, Space.EMPTY);
+	}
+
+	public boolean userCouldWin(int row, int col) {
+		int winPossibilities = 0;
+		this.setSpace(row, col, Space.BLACK);
+		for (int r = 0; r < HEIGHT; r++) {
+			for (int c = 0; c < WIDTH; c++) {
+				if (this.validMove(r, c)) {
+					this.setSpace(r, c, Space.BLACK);
+					if (this.checkForWin(Space.BLACK)) {
+						winPossibilities++;
+					}
+					this.setSpace(r, c, Space.EMPTY);
+					if (winPossibilities >= 2) {
+						this.setSpace(r, c, Space.EMPTY);
+						this.setSpace(row, col, Space.EMPTY);
+						return true;
+					}
+				}
+			}
+		}
+		this.setSpace(row, col, Space.EMPTY);
 		return false;
 	}
 }

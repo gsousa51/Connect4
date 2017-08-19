@@ -81,6 +81,9 @@ public class Computer {
 				return move;
 			else if (checkBackDiag(Space.RED, size))
 				return move;
+			else if (searchForBlock() && size<4) {
+				return move;
+			}
 			// Next we look for a move to block a possible win by the user
 			else if (checkHor(Space.BLACK, size))
 				return move;
@@ -135,6 +138,7 @@ public class Computer {
 	 * @return Point containing row and column of our move
 	 */
 	private boolean checkVert(Space type, int size) {
+		int start = Math.abs(4 - size);
 		// Used for debugging purposes
 		Point starting;
 		// Counts number of spaces we found in our section of four spaces
@@ -146,7 +150,7 @@ public class Computer {
 		Point blankSpace2 = new Point();
 		int blankFound = 0;
 		for (int c = 0; c < WIDTH; c++) {
-			for (int r = 0; r <= HEIGHT - size; r++) {
+			for (int r = start; r <= HEIGHT - size; r++) {
 				// reset the adjacent sum to 0
 				adj = 0;
 				indx = 0;
@@ -236,13 +240,14 @@ public class Computer {
 		int adj;
 		int indx;
 		int i = 0;
+		int start = Math.abs(4 - size);
 		boolean blankSpaceLogged = false;
 
 		Point blankSpace = new Point();
 		Point blankSpace2 = new Point();
 		int blanksFound = 0;
 		for (int r = 0; r < HEIGHT; r++) {
-			for (int c = 0; c <= WIDTH - size; c++) {
+			for (int c = start; c <= WIDTH - size; c++) {
 				// reset the adjacent sum to 0
 				adj = 0;
 				indx = 0;
@@ -251,7 +256,6 @@ public class Computer {
 				blankSpace2 = new Point(-1, -1);
 				starting = new Point(c, r);
 				blankSpaceLogged = false;
-				System.out.println("Peek is" + possibleMoves.peek() + " i:" + i);
 				i++;
 				while (indx < size) {
 					if (game.getSpace(r, c + indx) == type) {
@@ -472,6 +476,21 @@ public class Computer {
 				}
 			} // end for
 		} // end for
+		return false;
+	}
+
+	private boolean searchForBlock() {
+		for (int row = HEIGHT - 1; row >= 0; row--) {
+			for (int col = WIDTH - 1; col >= 0; col--) {
+				if (game.validMove(row, col)) {
+					if (game.userCouldWin(row, col)) {
+						move = new Point(col, row);
+						System.out.println("BLOCK");
+						return true;
+					}
+				}
+			}
+		}
 		return false;
 	}
 }

@@ -124,4 +124,8 @@ public class ConnectFour extends Observable {
 	public Computer getComp(){
 		return comp;
 	}
+
+	public boolean userCouldWin(int row, int col) {
+		return board.userCouldWin(row,col);
+	}
 }
