@@ -188,33 +188,76 @@ public class Board {
 	 */
 	public boolean onlyLosingMoves() {
 		boolean wouldLose = false;
-		//If there are ANY valid moves on the top row, return false.
-		for(int c = 0 ; c< board[0].length; c++){
-			if(this.validMove(0, c))
+		// If there are ANY valid moves on the top row, return false.
+		for (int c = 0; c < board[0].length; c++) {
+			if (this.validMove(0, c))
 				return false;
 		}
 		for (int c = 0; c < board[0].length; c++) {
 			for (int r = 1; r < board.length; r++) {
 				if (this.validMove(r, c)) {
-					//Set this hypothetical space to red
+					// Set this hypothetical space to red
 					this.setSpace(r, c, Space.RED);
-					//Set the space above it to black
-					//This tests if this move would be a losing move
-					this.setSpace(r-1, c, Space.BLACK);
+					// Set the space above it to black
+					// This tests if this move would be a losing move
+					this.setSpace(r - 1, c, Space.BLACK);
 					wouldLose = this.checkForWin(Space.BLACK);
 					this.setSpace(r, c, Space.EMPTY);
-					this.setSpace(r-1, c, Space.EMPTY);
-					//If there's a valid space to go without causing a victory
-					if(!wouldLose){
+					this.setSpace(r - 1, c, Space.EMPTY);
+					// If there's a valid space to go without causing a victory
+					if (!wouldLose) {
 						return false;
-					}
-					else 
-						//else reset the boolean back to false.
+					} else
+						// else reset the boolean back to false.
 						wouldLose = false;
 				}
 			}
 		}
-		//If we get here, every valid move is going to be a losing move.
+		// If we get here, every valid move is going to be a losing move.
 		return true;
+	}
+
+	/**Parameters: Two empty points found by the computer when searching for a 
+	*move that would create a string of size 3.
+	**The computer sends in the intended move, and where the move would be blocked.
+	*If the user blocks them and there's another place for the computer to go to win
+	*This would be considered a killshot.
+	**/
+	public boolean killShot(Space type, Point move, Point block) {
+		int moveR = move.y;
+		int moveC = move.x;
+		int blockR = block.y;
+		int blockC = block.x;
+		if(type != Space.RED ||
+				!this.validMove(moveR, moveC) || !this.validMove(blockR, blockC)){
+			return false;
+		}
+		this.setSpace(moveR, moveC, Space.RED);
+		this.setSpace(blockR, blockC, Space.RED);
+		if(!this.checkForWin(Space.RED)){
+			this.setSpace(moveR, moveC, Space.EMPTY);
+			this.setSpace(blockR, blockC, Space.EMPTY);
+			return false;
+		}
+		else{
+			this.setSpace(blockR, blockC, Space.BLACK);
+		}
+		for (int r = 0; r < board.length; r++) {
+			for (int c = 0; c < board[0].length; c++) {
+				if (this.validMove(r, c)) {
+					this.setSpace(r, c, Space.RED);
+					if (this.checkForWin(Space.RED)) {
+						this.setSpace(r, c, Space.EMPTY);
+						this.setSpace(moveR, moveC, Space.EMPTY);
+						this.setSpace(blockR, blockC, Space.EMPTY);
+						return true;
+					} else
+						this.setSpace(r, c, Space.EMPTY);
+				}
+			}
+		}
+		this.setSpace(moveR, moveC, Space.EMPTY);
+		this.setSpace(blockR, blockC, Space.EMPTY);
+		return false;
 	}
 }

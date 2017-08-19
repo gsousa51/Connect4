@@ -82,14 +82,15 @@ public class Computer {
 			else if (checkBackDiag(Space.RED, size))
 				return move;
 			// Next we look for a move to block a possible win by the user
-			else if (checkDiag(Space.BLACK, size))
-				return move;
-			else if (checkBackDiag(Space.BLACK, size))
-				return move;
 			else if (checkHor(Space.BLACK, size))
 				return move;
 			else if (checkVert(Space.BLACK, size))
 				return move;
+			else if (checkDiag(Space.BLACK, size))
+				return move;
+			else if (checkBackDiag(Space.BLACK, size))
+				return move;
+
 		}
 		Point peek;
 		// If we find neither, we go to the list of useful moves we gathered
@@ -142,15 +143,19 @@ public class Computer {
 		int indx;
 		// Used to keep track of blankspaces found in our section of four.
 		Point blankSpace = new Point();
+		Point blankSpace2 = new Point();
+		int blankFound = 0;
 		for (int c = 0; c < WIDTH; c++) {
 			for (int r = 0; r <= HEIGHT - size; r++) {
 				// reset the adjacent sum to 0
 				adj = 0;
 				indx = 0;
+				blankFound = 0;
 				// Make an invalid blankSpace to start
 				// (Helps to prevent adding the blankspace for an unrelated
 				// section)
 				blankSpace = new Point(-1, -1);
+				blankSpace2 = new Point(-1, -1);
 				starting = new Point(c, r);
 				// Inspect our section of four.
 				while (indx < size) {
@@ -169,8 +174,22 @@ public class Computer {
 						// for comp
 
 						if (game.getSpace(r + indx, c) == Space.EMPTY) {
+							blankFound++;
 							// Store space into our blankspace var
-							blankSpace = new Point(c, r + indx);
+							if (blankFound == 1)
+								blankSpace = new Point(c, r + indx);
+							else if (blankFound == 2) {
+								blankSpace2 = new Point(c, r + indx);
+								if (game.killShot(type, blankSpace, blankSpace2)) {
+									move = blankSpace;
+									System.out.println("---KILLSHOT VERT---");
+									return true;
+								} else if (game.killShot(type, blankSpace2, blankSpace)) {
+									move = blankSpace2;
+									System.out.println("---KILLSHOT VERT---");
+									return true;
+								}
+							}
 							// If its a valid move, add it to our possiblemoves
 							// list
 							if (game.validMove(r + indx, c)) {
@@ -199,7 +218,7 @@ public class Computer {
 					// true.
 				if (adj == size - 1) {
 					if (game.validMove(blankSpace.y, blankSpace.x)) {
-						if (size == 4 || !game.wouldCauseLoss(blankSpace.y, blankSpace.x)) {
+						if (size == 4) {
 							System.out.println("Move Chose By : Vert");
 							System.out.println(starting);
 							move = blankSpace;
@@ -220,12 +239,16 @@ public class Computer {
 		boolean blankSpaceLogged = false;
 
 		Point blankSpace = new Point();
+		Point blankSpace2 = new Point();
+		int blanksFound = 0;
 		for (int r = 0; r < HEIGHT; r++) {
 			for (int c = 0; c <= WIDTH - size; c++) {
 				// reset the adjacent sum to 0
 				adj = 0;
 				indx = 0;
+				blanksFound = 0;
 				blankSpace = new Point(-1, -1);
+				blankSpace2 = new Point(-1, -1);
 				starting = new Point(c, r);
 				blankSpaceLogged = false;
 				System.out.println("Peek is" + possibleMoves.peek() + " i:" + i);
@@ -245,7 +268,21 @@ public class Computer {
 						// for comp
 
 						if (game.getSpace(r, c + indx) == Space.EMPTY) {
-							blankSpace = new Point(c + indx, r);
+							blanksFound++;
+							if (blanksFound == 1)
+								blankSpace = new Point(c + indx, r);
+							else if (blanksFound == 2) {
+								blankSpace2 = new Point(c + indx, r);
+								if (game.killShot(type, blankSpace, blankSpace2)) {
+									move = blankSpace;
+									System.out.println("----KILLSHOT HOR----");
+									return true;
+								} else if (game.killShot(type, blankSpace2, blankSpace)) {
+									move = blankSpace2;
+									System.out.println("----KILLSHOT HOR----");
+									return true;
+								}
+							}
 							if (game.validMove(r, c + indx)) {
 								if (adj >= 2 && !blankSpaceLogged) {
 									blankSpaceLogged = true;
@@ -264,7 +301,7 @@ public class Computer {
 					// type
 					// We check to see if the blank space was valid
 				if (adj == size - 1) {
-					if (size == 4 || !game.wouldCauseLoss(blankSpace.y, blankSpace.x)) {
+					if (size == 4) {
 						if (game.validMove(blankSpace.y, blankSpace.x)) {
 							System.out.println("Move Chose By : Hor");
 							System.out.println(starting);
@@ -278,17 +315,20 @@ public class Computer {
 		return false;
 	}
 
-	private boolean checkBackDiag(Space type, int size) {
+	private boolean checkDiag(Space type, int size) {
 		Point starting;
 		int adj;
 		int indx;
+		int blanksFound = 0;
 		Point blankSpace = new Point();
-
-		for (int c = size-1; c < WIDTH; c++) {
+		Point blankSpace2 = new Point();
+		for (int c = size - 1; c < WIDTH; c++) {
 			for (int r = 0; r <= HEIGHT - size; r++) {
 				adj = 0;
 				indx = 0;
+				blanksFound = 0;
 				blankSpace = new Point(-1, -1);
+				blankSpace2 = new Point(-1, -1);
 				starting = new Point(c, r);
 				while (indx < size) {
 					if (game.getSpace(r + indx, c - indx) == type) {
@@ -305,7 +345,22 @@ public class Computer {
 						// for comp
 
 						if (game.getSpace(r + indx, c - indx) == Space.EMPTY) {
-							blankSpace = new Point(c - indx, r + indx);
+							blanksFound++;
+							if (blanksFound == 1)
+								blankSpace = new Point(c - indx, r + indx);
+							else if (blanksFound == 2) {
+								blankSpace2 = new Point(c - indx, r + indx);
+								if (game.killShot(type, blankSpace, blankSpace2)) {
+									move = blankSpace;
+									System.out.println("----KILLSHOT DIAG----");
+									return true;
+								} else if (game.killShot(type, blankSpace2, blankSpace)) {
+									move = blankSpace2;
+									System.out.println("----KILLSHOT DIAG----");
+									return true;
+								}
+
+							}
 							if (game.validMove(r + indx, c - indx)) {
 								if (adj >= 2) {
 									possibleMoves.push(blankSpace);
@@ -323,9 +378,9 @@ public class Computer {
 					// type
 					// We check the end points to see if there's a valid move
 				if (adj == size - 1) {
-					if (size == 4 || !game.wouldCauseLoss(blankSpace.y, blankSpace.x)) {
+					if (size == 4) {
 						if (game.validMove(blankSpace.y, blankSpace.x)) {
-							System.out.println("Move Chose By : BackDiag");
+							System.out.println("Move Chose By : Diag");
 							System.out.println(starting);
 							move = blankSpace;
 							return true;
@@ -337,17 +392,21 @@ public class Computer {
 		return false;
 	}
 
-	private boolean checkDiag(Space type, int size) {
+	private boolean checkBackDiag(Space type, int size) {
 		Point starting;
 		int adj;
 		int indx;
+		int blanksFound = 0;
 		Point blankSpace = new Point();
-		for (int c = WIDTH - 1; c >= size-1; c--) {
-			for (int r = HEIGHT - 1; r >= size-1; r--) {
+		Point blankSpace2 = new Point();
+		for (int c = WIDTH - 1; c >= size - 1; c--) {
+			for (int r = HEIGHT - 1; r >= size - 1; r--) {
 				adj = 0;
 				indx = 0;
+				blanksFound = 0;
 				starting = new Point(c, r);
 				blankSpace = new Point(-1, -1);
+				blankSpace2 = new Point(-1, -1);
 
 				while (indx < size) {
 					if (game.getSpace(r - indx, c - indx) == type) {
@@ -365,7 +424,21 @@ public class Computer {
 						// If it's an empty space and not occupied by
 						// anybody
 						if (game.getSpace(r - indx, c - indx) == Space.EMPTY) {
-							blankSpace = new Point(c - indx, r - indx);
+							blanksFound++;
+							if (blanksFound == 1)
+								blankSpace = new Point(c - indx, r - indx);
+							else if (blanksFound == 2) {
+								blankSpace2 = new Point(c - indx, r - indx);
+								if (game.killShot(type, blankSpace, blankSpace2)) {
+									move = blankSpace;
+									System.out.println("----KILLSHOT BACKDIAG----");
+									return true;
+								} else if (game.killShot(type, blankSpace2, blankSpace)) {
+									move = blankSpace2;
+									System.out.println("----KILLSHOT BACKDIAG----");
+									return true;
+								}
+							}
 							if (game.validMove(r - indx, c - indx)) {
 								// If we've only seen one in a row, put it
 								// at the end
@@ -388,7 +461,7 @@ public class Computer {
 					// type
 					// We check the end points to see if there's a valid move
 				if (adj == size - 1) {
-					if (size == 4 || !game.wouldCauseLoss(blankSpace.y, blankSpace.x)) {
+					if (size == 4) {
 						if (game.validMove(blankSpace.y, blankSpace.x)) {
 							System.out.println("Move Chose By : Diag");
 							System.out.println(starting);

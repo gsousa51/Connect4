@@ -114,4 +114,14 @@ public class ConnectFour extends Observable {
 	public Space getSpace(int r, int c) {
 		return board.getSpace(r, c);
 	}
+	public boolean killShot(Space type , Point move, Point block){
+		return board.killShot(type, move, block)&&!wouldCauseLoss(move.y,move.x);
+	}
+	public Board getBoard(){
+		//FOR TESTING
+		return board;
+	}
+	public Computer getComp(){
+		return comp;
+	}
 }
