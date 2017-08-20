@@ -22,6 +22,7 @@ public class Board {
 		return this.board;
 	}
 
+	// Used when we restart game. Resets board to empty.
 	public void reset() {
 		for (int r = 0; r < 6; r++) {
 			for (int c = 0; c < 7; c++) {
@@ -225,36 +226,45 @@ public class Board {
 	 * be considered a killshot.
 	 **/
 	public boolean killShot(Space type, Point move, Point block) {
+		Space color = type;
+		Space otherColor;
+		if (type == Space.RED) {
+			otherColor = Space.BLACK;
+		} else
+			otherColor = Space.RED;
 		int moveR = move.y;
 		int moveC = move.x;
 		int blockR = block.y;
 		int blockC = block.x;
-		if (type != Space.RED || !this.validMove(moveR, moveC) || !this.validMove(blockR, blockC)) {
+		if (!this.validMove(moveR, moveC) || !this.validMove(blockR, blockC)) {
 			return false;
 		}
 		// Comp takes its desired move
-		this.setSpace(moveR, moveC, Space.RED);
+		this.setSpace(moveR, moveC, color);
+		if (this.checkForWin(type)) {
+			return true;
+		}
 		// If user didn't go here, we assume computer would to check for win
 		// If computer couldn't win in spot anyways, user wouldn't have blocked
 
-		this.setSpace(blockR, blockC, Space.RED);
-		if (!this.checkForWin(Space.RED)) {
+		this.setSpace(blockR, blockC, color);
+		if (!this.checkForWin(color)) {
 			resetSpaces(move, block);
 			return false;
-		} else {
+		} else if (type == Space.RED) {
 			// If this would set up a win by the user, return false.
 			this.setSpace(blockR, blockC, Space.BLACK);
 			if (this.checkForWin(Space.BLACK)) {
 				resetSpaces(move, block);
 				return false;
 			}
-
-		}
+		} else
+			this.setSpace(blockR, blockC, Space.RED);
 		for (int r = 0; r < board.length; r++) {
 			for (int c = 0; c < board[0].length; c++) {
 				if (this.validMove(r, c)) {
-					this.setSpace(r, c, Space.RED);
-					if (this.checkForWin(Space.RED)) {
+					this.setSpace(r, c, color);
+					if (this.checkForWin(color)) {
 						resetSpaces(move, block);
 						this.setSpace(r, c, Space.EMPTY);
 						return true;
@@ -272,26 +282,136 @@ public class Board {
 		this.setSpace(block.y, block.x, Space.EMPTY);
 	}
 
+	/**
+	 * 
+	 * @param row
+	 *            of spot to inspect
+	 * @param col
+	 *            of spot to inspect
+	 * @return true if user would be able to pull of double-kill or more false
+	 *         is not.
+	 */
 	public boolean userCouldWin(int row, int col) {
+		// Keep track of future win possibilities (obviously we'd prefer 0)
 		int winPossibilities = 0;
+		// Set the space to a user move temporarily
 		this.setSpace(row, col, Space.BLACK);
+
 		for (int r = 0; r < HEIGHT; r++) {
 			for (int c = 0; c < WIDTH; c++) {
+				// If the spot is valid, we inspect
 				if (this.validMove(r, c)) {
+					// Temporarily set to user move to check future possibilites
 					this.setSpace(r, c, Space.BLACK);
+					// If this move would end up as a win for user
 					if (this.checkForWin(Space.BLACK)) {
+						// increment sum
 						winPossibilities++;
 					}
+					// reset space to empty
 					this.setSpace(r, c, Space.EMPTY);
+					// If we found two win possiblities, we should take the
+					// space
+
 					if (winPossibilities >= 2) {
-						this.setSpace(r, c, Space.EMPTY);
 						this.setSpace(row, col, Space.EMPTY);
 						return true;
 					}
 				}
 			}
 		}
+		// If we get here, there were one or less possibilities to win.
+		// If there was only one, our search later will snuff it out.
 		this.setSpace(row, col, Space.EMPTY);
 		return false;
+	}
+
+	/**
+	 * 1) Go through the list of possible moves. 2) If there is somewhere user
+	 * could go that would force a block AND they'd win after the block, take
+	 * that space. JUST AS LONG AS IT WOULDN'T CAUSE THE USER TO WIN THE GAME IF
+	 * WE WERE GOING TO GO THERE.
+	 * 
+	 * 
+	 */
+	public Point lookAhead() {
+		int[] list = getListOfValidMoves();
+		int tempR;
+		int tempR2;
+
+		for (int c = 0; c < list.length; c++) {
+			if (list[c] >= 0 && !this.wouldCauseLoss(list[c], c)) {
+				// Store row we just had user go.
+				tempR = list[c];
+				this.setSpace(list[c], c, Space.BLACK);
+				// Set valid move up a row.
+				list[c]--;
+				// check to see if user would be able to create a win
+				// after going in this hypothetical spot.
+				for (int c2 = 0; c2 < list.length; c2++) {
+					if (list[c2] >= 0) {
+						this.setSpace(list[c2], c2, Space.BLACK);
+						// If user went in place and it would cause a win
+						// We would have to have blocked that spot.
+						if (this.checkForWin(Space.BLACK)) {
+							tempR2 = list[c2];
+							// Put a block
+							this.setSpace(list[c2], c2, Space.RED);
+							list[c2]--;
+							for (int c3 = 0; c3 < list.length; c3++) {
+								if (list[c3] >= 0) {
+									this.setSpace(list[c3], c3, Space.BLACK);
+									if (checkForWin(Space.BLACK)) {
+										this.setSpace(list[c3], c3, Space.EMPTY);
+										this.setSpace(tempR2, c2, Space.EMPTY);
+										this.setSpace(tempR, c, Space.EMPTY);
+										return new Point(c, tempR);
+									} // end if
+									else{
+										this.setSpace(list[c3], c3, Space.EMPTY);
+									}
+								}
+							} // end for
+							list[c2]++;
+						} // end if
+						this.setSpace(list[c2], c2, Space.EMPTY);
+					}//end if
+				} // end c2for
+				this.setSpace(++list[c], c, Space.EMPTY);
+			} // end if
+		}
+		return new Point(-1, -1);
+	}
+
+	public int[] getListOfValidMoves() {
+		int[] list = new int[WIDTH];
+
+		for (int c = 0; c < WIDTH; c++) {
+			// Initialize as having no valid space in column
+			list[c] = -1;
+			for (int r = HEIGHT - 1; r >= 0; r--) {
+				// We found a valid move, log it, break out of loop.
+				if (board[r][c] == Space.EMPTY) {
+					list[c] = r;
+					break;
+				}
+			}
+		}
+		return list;
+	}
+
+	private boolean wouldCauseLoss(int r, int c) {
+		boolean wouldCauseWin = false;
+		/**
+		 * If this move wasn't at the top space, we check. Otherwise it couldn't
+		 * possibly allow a win. If there's only losing moves left, we just tell
+		 * the comp it can't causea win It really has no other option
+		 **/
+		if (r > 0 && !this.onlyLosingMoves()) {
+			this.setSpace(r - 1, c, Space.BLACK);
+			wouldCauseWin = this.checkForWin(Space.BLACK);
+			this.setSpace(r - 1, c, Space.EMPTY);
+		}
+		return wouldCauseWin;
 	}
 }

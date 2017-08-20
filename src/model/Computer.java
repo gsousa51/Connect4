@@ -18,61 +18,16 @@ public class Computer {
 		this.game = game;
 	}
 
-	// public Point getMove() {
-	// // Used for checking our list of moves
-	// Point peek;
-	// // Clear the old list of possible moves
-	// possibleMoves.clear();
-	// // First we check for a winning move in all four directions
-	// // If we find one, return the Point containing our move.
-	// if (checkDiag(Space.RED))
-	// return move;
-	// else if (checkHor(Space.RED))
-	// return move;
-	// else if (checkVert(Space.RED))
-	// return move;
-	// else if (checkBackDiag(Space.RED))
-	// return move;
-	// // Next we look for a move to block a possible win by the user
-	// else if (checkDiag(Space.BLACK))
-	// return move;
-	// else if (checkBackDiag(Space.BLACK))
-	// return move;
-	// else if (checkHor(Space.BLACK))
-	// return move;
-	// else if (checkVert(Space.BLACK))
-	// return move;
-	// else {
-	// // If we find neither, we go to the list of useful moves we gathered
-	// while (!possibleMoves.isEmpty()) {
-	// peek = possibleMoves.peek();
-	// // If the move is valid and doesn't cause us to lose, choose it.
-	// if (game.validMove(peek.y, peek.x) && !game.wouldCauseLoss(peek.y,
-	// peek.x)) {
-	// System.out.println("Move Chose By : MoveList");
-	// return peek;
-	// }
-	// // Else, check the next one.
-	// else {
-	// possibleMoves.pop();
-	// }
-	// }
-	// }
-	// // If we get here, none of the possibleMoves worked.
-	// // Choose a random move.
-	// System.out.println("Random Move Chosen");
-	// Random randX = new Random();
-	// Random randY = new Random();
-	// Point randP = new Point(randX.nextInt(WIDTH), randY.nextInt(HEIGHT));
-	// // Make sure the move is valid and won't cause us to lose.
-	// while (!game.validMove(randP.y, randP.x) || game.wouldCauseLoss(randP.y,
-	// randP.x)) {
-	// randP = new Point(randX.nextInt(WIDTH), randY.nextInt(HEIGHT));
-	// }
-	// return randP;
-	// }
+	/**
+	 * Method used by controller to get move from Computer. Computer first looks
+	 * for a winning move then searches for a way to stop an imminent victory by
+	 * user.
+	 */
 	public Point getMove() {
-		for (int size = 4; size >= 2; size--) {
+		// Start looking for a move based on a string of size 4
+		// Countdown from there.
+		for (int size = 4; size >= 3; size--) {
+			// Look for winning move in 4 directions
 			if (checkDiag(Space.RED, size))
 				return move;
 			else if (checkHor(Space.RED, size))
@@ -81,9 +36,13 @@ public class Computer {
 				return move;
 			else if (checkBackDiag(Space.RED, size))
 				return move;
-			else if (searchForBlock() && size<4) {
-				return move;
-			}
+			// We look for a way to stop a possible setup from the user
+			// by looking one step ahead of the user.
+			// But only if the size is less than 4 because the other methods
+			// more effectively stop a winning move.
+			// else if (size<4 && searchForBlock() ) {
+			// return move;
+			// }
 			// Next we look for a move to block a possible win by the user
 			else if (checkHor(Space.BLACK, size))
 				return move;
@@ -95,6 +54,8 @@ public class Computer {
 				return move;
 
 		}
+		// If we get here, none of the above moves worked out.
+		// Look for one from our movelist.
 		Point peek;
 		// If we find neither, we go to the list of useful moves we gathered
 		while (!possibleMoves.isEmpty()) {
@@ -124,8 +85,8 @@ public class Computer {
 	}
 
 	/**
-	 * Look for a move in the vertical direction that either completes four in
-	 * row OR blocks the user's four in a row Method goes through grid,
+	 * Look for a move in the vertical direction that either completes "size" in
+	 * row OR blocks the user's "size" in a row Method goes through grid,
 	 * inspecting sections of size four that are aligned veritcally. If it finds
 	 * three spaces that are of parameter type, we fill in the blank space that
 	 * would connect them. If it finds a blank spaces but we don't have an
@@ -138,6 +99,7 @@ public class Computer {
 	 * @return Point containing row and column of our move
 	 */
 	private boolean checkVert(Space type, int size) {
+		// Calculating a start allows to avoid redundant searching
 		int start = Math.abs(4 - size);
 		// Used for debugging purposes
 		Point starting;
@@ -183,19 +145,26 @@ public class Computer {
 							if (blankFound == 1)
 								blankSpace = new Point(c, r + indx);
 							else if (blankFound == 2) {
+								/**
+								 * If we found two blanks, there's a possiblity
+								 * of a "Double Kill" move. We could create a
+								 * string of size 3 spaces, causing user to have
+								 * to block, then we may be able to capitalize
+								 * elsewhere
+								 */
 								blankSpace2 = new Point(c, r + indx);
-								if (game.killShot(type, blankSpace, blankSpace2)) {
+								if (size != 4 && game.killShot(type, blankSpace, blankSpace2) && size != 4) {
 									move = blankSpace;
+									// TODO: Delete debugging console output
 									System.out.println("---KILLSHOT VERT---");
 									return true;
-								} else if (game.killShot(type, blankSpace2, blankSpace)) {
+								} else if (size != 4 && game.killShot(type, blankSpace2, blankSpace)) {
 									move = blankSpace2;
 									System.out.println("---KILLSHOT VERT---");
 									return true;
 								}
 							}
 							// If its a valid move, add it to our possiblemoves
-							// list
 							if (game.validMove(r + indx, c)) {
 								// If adj is high, push it to front
 								if (adj >= 2) {
@@ -215,13 +184,14 @@ public class Computer {
 					} // end else
 					indx++;
 				} // end while
-					// If we found three adjacent spaces occupied by parameter
-					// type
+					// If we found size-1 occupied by parameter type
 					// We check to make sure the blankspace found is valid.
 					// If so, we store it in our selection variable and return
 					// true.
 				if (adj == size - 1) {
 					if (game.validMove(blankSpace.y, blankSpace.x)) {
+						// If it's a winning or blocking move, immediately use
+						// it.
 						if (size == 4) {
 							System.out.println("Move Chose By : Vert");
 							System.out.println(starting);
@@ -232,9 +202,11 @@ public class Computer {
 				}
 			}
 		}
+		// If we get here we didn't find a winning/blocking or doublekill move
 		return false;
 	}
 
+	// Method is identical to the above, just horizontal searches
 	private boolean checkHor(Space type, int size) {
 		Point starting;
 		int adj;
@@ -277,11 +249,11 @@ public class Computer {
 								blankSpace = new Point(c + indx, r);
 							else if (blanksFound == 2) {
 								blankSpace2 = new Point(c + indx, r);
-								if (game.killShot(type, blankSpace, blankSpace2)) {
+								if (size != 4 && game.killShot(type, blankSpace, blankSpace2)) {
 									move = blankSpace;
 									System.out.println("----KILLSHOT HOR----");
 									return true;
-								} else if (game.killShot(type, blankSpace2, blankSpace)) {
+								} else if (size != 4 && game.killShot(type, blankSpace2, blankSpace)) {
 									move = blankSpace2;
 									System.out.println("----KILLSHOT HOR----");
 									return true;
@@ -319,6 +291,16 @@ public class Computer {
 		return false;
 	}
 
+	/**
+	 * Identical to above methods, but searches diagonally
+	 * 
+	 * i.e :
+	 *
+	 *
+	 *
+	 *
+	 * 
+	 */
 	private boolean checkDiag(Space type, int size) {
 		Point starting;
 		int adj;
@@ -354,11 +336,11 @@ public class Computer {
 								blankSpace = new Point(c - indx, r + indx);
 							else if (blanksFound == 2) {
 								blankSpace2 = new Point(c - indx, r + indx);
-								if (game.killShot(type, blankSpace, blankSpace2)) {
+								if (size != 4 && game.killShot(type, blankSpace, blankSpace2)) {
 									move = blankSpace;
 									System.out.println("----KILLSHOT DIAG----");
 									return true;
-								} else if (game.killShot(type, blankSpace2, blankSpace)) {
+								} else if (size != 4 && game.killShot(type, blankSpace2, blankSpace)) {
 									move = blankSpace2;
 									System.out.println("----KILLSHOT DIAG----");
 									return true;
@@ -378,8 +360,7 @@ public class Computer {
 					} // end else
 					indx++;
 				} // end while
-					// If we found three adjacent spaces occupied by parameter
-					// type
+					// If we found size-1 spaces occupied by parameter type
 					// We check the end points to see if there's a valid move
 				if (adj == size - 1) {
 					if (size == 4) {
@@ -433,11 +414,11 @@ public class Computer {
 								blankSpace = new Point(c - indx, r - indx);
 							else if (blanksFound == 2) {
 								blankSpace2 = new Point(c - indx, r - indx);
-								if (game.killShot(type, blankSpace, blankSpace2)) {
+								if (size != 4 && game.killShot(type, blankSpace, blankSpace2)) {
 									move = blankSpace;
 									System.out.println("----KILLSHOT BACKDIAG----");
 									return true;
-								} else if (game.killShot(type, blankSpace2, blankSpace)) {
+								} else if (size != 4 && game.killShot(type, blankSpace2, blankSpace)) {
 									move = blankSpace2;
 									System.out.println("----KILLSHOT BACKDIAG----");
 									return true;
@@ -461,8 +442,7 @@ public class Computer {
 					} // end else
 					indx++;
 				} // end while
-					// If we found three adjacent spaces occupied by parameter
-					// type
+					// If we found size-1 spaces occupied by parameter type
 					// We check the end points to see if there's a valid move
 				if (adj == size - 1) {
 					if (size == 4) {
@@ -479,10 +459,19 @@ public class Computer {
 		return false;
 	}
 
+	/**
+	 * Method searches for a block against user by looking one step into future
+	 * It checks for moves that could set computer up for a "double-kill" One
+	 * example of a "double kill" is |E| * | * | * |E| If user finds a way to
+	 * achieve this, computer would lose immediately no matter where they try to
+	 * block.
+	 */
 	private boolean searchForBlock() {
 		for (int row = HEIGHT - 1; row >= 0; row--) {
 			for (int col = WIDTH - 1; col >= 0; col--) {
 				if (game.validMove(row, col)) {
+					// If we find a double-kill in the future
+					// we take that move
 					if (game.userCouldWin(row, col)) {
 						move = new Point(col, row);
 						System.out.println("BLOCK");

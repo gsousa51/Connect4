@@ -5,88 +5,56 @@ import java.util.Observable;
 
 import javax.swing.JOptionPane;
 
-import view.GUI;
 
 public class ConnectFour extends Observable {
 	private static final long serialVersionUID = 1L;
-	private GUI gui;
 	private Board board;
 	private Computer comp;
-	private int movesLeft;
-
+	
 	public ConnectFour() {
 		this.board = new Board();
 		this.comp = new Computer(this);
-		movesLeft = 42;
 	}
 
 	public void userMove(int row, int col) {
 		board.setSpace(row, col, Space.BLACK);
-		movesLeft--;
+		
 		if (board.checkForWin(Space.BLACK)) {
 			setChanged();
 			notifyObservers();
-			int reply = JOptionPane.showConfirmDialog(null, "You Won! \n Play Again?", "WINNER",
-					JOptionPane.YES_NO_OPTION);
-			if (reply == JOptionPane.YES_OPTION) {
-				board.reset();
-				movesLeft = 42;
-				setChanged();
-				notifyObservers();
-			} else {
-				JOptionPane.showMessageDialog(null, "GOODBYE");
-				System.exit(0);
-			}
+			popWindow("You Won! \n Play again?", "Winner!");
 		} else if (board.boardFull()) {
 			setChanged();
 			notifyObservers();
-			int reply = JOptionPane.showConfirmDialog(null, "Tie! \n Play Again?", "WINNER", JOptionPane.YES_NO_OPTION);
-			if (reply == JOptionPane.YES_OPTION) {
-				board.reset();
-				movesLeft = 42;
-				setChanged();
-				notifyObservers();
-			} else {
-				JOptionPane.showMessageDialog(null, "GOODBYE");
-				System.exit(0);
-			}
+			popWindow("TIE! \n Play again?" , "Tie");
 		} else {
 			Point compMove = comp.getMove();
 			board.setSpace(compMove.y, compMove.x, Space.RED);
-			movesLeft--;
+			
 			setChanged();
 			notifyObservers();
 
 			if (board.checkForWin(Space.RED)) {
-				int reply = JOptionPane.showConfirmDialog(null, "You Lost... \n Play Again?", "Woops...",
-						JOptionPane.YES_NO_OPTION);
-				if (reply == JOptionPane.YES_OPTION) {
-					board.reset();
-					movesLeft = 42;
-					setChanged();
-					notifyObservers();
-				} else {
-					JOptionPane.showMessageDialog(null, "Thanks for Playing!");
-					System.exit(0);
-				}
+				popWindow("You lost... \n", "Woops");
 			} else if (board.boardFull()) {
 				setChanged();
 				notifyObservers();
-				int reply = JOptionPane.showConfirmDialog(null, "Tie! \n Play Again?", "WINNER",
-						JOptionPane.YES_NO_OPTION);
-				if (reply == JOptionPane.YES_OPTION) {
-					board.reset();
-					movesLeft = 42;
-					setChanged();
-					notifyObservers();
-				} else {
-					JOptionPane.showMessageDialog(null, "GOODBYE");
-					System.exit(0);
-				}
+				popWindow("TIE! \n Play again?" , "Tie");
 			}
 		}
 	}
-
+	private void popWindow(String message, String label){
+		int reply = JOptionPane.showConfirmDialog(null, message, label,
+				JOptionPane.YES_NO_OPTION);
+		if (reply == JOptionPane.YES_OPTION) {
+			board.reset();
+			setChanged();
+			notifyObservers();
+		} else {
+			JOptionPane.showMessageDialog(null, "GOODBYE");
+			System.exit(0);
+		}
+	}
 	/**
 	 * Makes a hypothetical move by user above where computer wants to go If
 	 * their move would allow a win by the user, return true. If it's a safe
@@ -126,6 +94,6 @@ public class ConnectFour extends Observable {
 	}
 
 	public boolean userCouldWin(int row, int col) {
-		return board.userCouldWin(row,col);
+		return board.userCouldWin(row,col)&&!wouldCauseLoss(row,col);
 	}
 }
